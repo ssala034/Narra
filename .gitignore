@@ -1,1 +1,5 @@
 **/node_modules/
+build/bin
+frontend/dist
+certificates/
+.env
