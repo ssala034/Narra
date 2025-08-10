@@ -1,0 +1,26 @@
+.loader {
+  display: inline-block;
+  position: relative;
+}
+
+.loader-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 10px solid transparent;
+  border-top-color: #c26e73;
+  border-right-color: #ac1ed6;
+  border-bottom-color: #c26e73;
+  border-left-color: #ac1ed6;
+  animation: spin 1s linear infinite;
+  box-shadow: 0 0 15px #c26e73, 0 0 15px #ac1ed6;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

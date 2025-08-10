@@ -1,19 +1,24 @@
-import wailsLogo from './assets/wails.png'
 import './App.css'
+import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './components/Home'
+import Loading from './components/Loading';
 
 function App() {
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
-        <div className="min-h-screen bg-white grid grid-cols-1 place-items-center justify-items-center mx-auto py-8">
-            <div className="text-blue-900 text-2xl font-bold font-mono">
-                <h1 className="content-center">Vite Shuaib + React + TS + Tailwind</h1>
-            </div>
-            <div className="w-fit max-w-md">
-                <a href="https://wails.io" target="_blank">
-                    <img src={wailsLogo} className="logo wails" alt="Wails logo" />
-                </a>
-            </div>
-        </div>
+        <Router>
+            <Routes>
+                <Route path="/" element={<Home/>} />
+            </Routes>
+        </Router>
     )
 }
 
-export default App
+export default App;

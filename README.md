@@ -26,3 +26,27 @@ browser and connect to your application.
 
 To build a redistributable, production mode package, use `wails build`.
 
+
+
+todo:
+test it both feature
+since gemini response is slow need to have a nice loading thing that most chats have
+
+
+
+
+UI:
+make it dark themed
+make it responsive when the users changes the size
+make it collapsable so they can close if they don't need it and then re-open to same size it was before
+might need to make new chats with sql so save info ??
+make sure that everything slides when going to next section of page like in slides powerpoint
+
+
+Only after done on:
+try light and dark themed
+
+
+
+august 9th:
+installed : three.js library(npm install three @react-three/fiber@8 @react-three/drei@9 @react-spring/three)
