@@ -7,8 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"google.golang.org/genai"
-	// "google.golang.org/genai" // Issue with the import, might be how the go.mod owrks ???!?!?!
+	"google.golang.org/genai" // Issue with the import, might be how the go.mod owrks ???!?!?!
 )
 
 // App struct
@@ -53,12 +52,6 @@ func (a *App) Greet(name string) string {
 Logic for buiding file system, will be used inside the RAG pipeline
 Still need to do data indexing and vector store creation
 (might do on different files???)
-*/
-
-
-
-/*
-Logic for building file system, will be used inside the RAG pipeline
 */
 type FileSystemNode struct {
 	Name     string
@@ -110,6 +103,8 @@ func buildChildren(dirPath string, parent *FileSystemNode) []*FileSystemNode {
 }
 
 // Helper function to build the root node and start the recursive process
+
+// update so it skip things like node_modules or library packages
 func BuildFileSystemTree(rootPath string) (*FileSystemNode, error) {
 	// Check if the root path exists and is a directory
 	info, err := os.Stat(rootPath)
@@ -135,6 +130,7 @@ func BuildFileSystemTree(rootPath string) (*FileSystemNode, error) {
 }
 
 // PrintFileSystemTree prints the directory structure in a tree format
+// Helper function
 func PrintFileSystemTree(node *FileSystemNode) {
 	printNode(node, "", true, true)
 }
@@ -189,7 +185,9 @@ func printNode(node *FileSystemNode, prefix string, isLast bool, isRoot bool) {
 
 /*
 
-Connection to google gemini AI API logic
+Connection to google gemini AI API logic + entry point for response from pipeline
+
+!!!!
 need to test
 
 */
@@ -228,4 +226,72 @@ func (a *App) connectToGeminiAPI() {
 	fmt.Println("Gemini Response .....")
 	fmt.Println(result.Text)
 	fmt.Println("End of Gemini Response")
+}
+
+func (a *App) buildRAGPipeline() {
+	// Set up API key
+	geminiAPIKey := os.Getenv("GEMINI_API_KEY")
+	if geminiAPIKey == "" {
+		log.Fatal("GEMINI_API_KEY environment variable not set")
+	}
+
+	// Initialize RAG pipeline
+	pipeline, err := NewRAGPipeline(geminiAPIKey, "vector_db2.json")
+	if err != nil {
+		log.Fatal("Failed to create RAG pipeline:", err)
+	}
+
+	// Build file system tree (done on loading screen)
+	rootPath := "C:/Users/shuai/OneDrive/Desktop/School/Winter 2024/ITI 1121/Assignments/Assignment4/a4_300353229_300353229"
+	root, err := BuildFileSystemTree(rootPath)
+	if err != nil {
+		log.Fatal("Failed to build file system tree:", err)
+	}
+
+	fmt.Printf("Built file system tree for: %s\n", root.Name)
+
+	// Extract and index documents
+	documents := pipeline.ExtractDocuments(root)
+	fmt.Printf("Extracted %d document chunks\n", len(documents))
+
+	if len(documents) > 0 {
+		fmt.Println("Indexing documents...")
+		err = pipeline.IndexDocuments(documents)
+		if err != nil {
+			log.Fatal("Failed to index documents:", err)
+		}
+		fmt.Println("Indexing completed!")
+
+		// Print statistics
+		stats := pipeline.GetStats()
+		fmt.Printf("Database stats: %+v\n", stats)
+	}
+
+	// Example queries (should get the questions from the user)
+
+	/*!!!!!1 Called after fully done loading the documents !!!!!!!!*/
+	ctx := context.Background()
+	queries := []string{
+		"What is the main functionality of this codebase?",
+		"How are files processed in this system?",
+		"What are the key components or classes?",
+	}
+
+	for _, query := range queries {
+		fmt.Printf("\n=== Query: %s ===\n", query)
+
+		answer, results, err := pipeline.Query(ctx, query, 3)
+		if err != nil {
+			log.Printf("Query failed: %v", err)
+			continue
+		}
+
+		fmt.Printf("Answer: %s\n", answer)
+
+		fmt.Println("\nRelevant documents:")
+		for i, result := range results {
+			fmt.Printf("%d. [%.3f] %s (chunk %d)\n",
+				i+1, result.Similarity, result.Document.FilePath, result.Document.ChunkIdx)
+		}
+	}
 }
