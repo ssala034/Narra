@@ -48,6 +48,7 @@ Try to use some optimization techniques so that i don't ahve to actually parse 2
     - might try to reascrh things so I can just judge based on a limited set
     - or figure out the most import set and only use that (but need to know what is the most important set??? optimizaiton)
     - also because i may not be able to send that much data even if vectorizing it to gemini
+        - need to worry about context window
 
 currently very slow reading everything
 
@@ -56,6 +57,20 @@ currently very slow reading everything
 
 
 _____
+
+Sept 2nd
+Skipped the Ai setup in JS (50:02)
+
+I will be doing it in golang then serving it to the frontned for an API
+    - note it should be async function (but in Golang)
+
+
+// Note the previous chats will go away so try to set up a sqlite so you can save previous chats!!!!!
+    - // might use the sqlite here, cause I don't want it to re-generate a different reponse (1:46:18)
+
+Make it so that when the suggested prompts have an onClick
+
+/*Try to make it so each time they re-open and close it does an animation */
 
 
 AI:

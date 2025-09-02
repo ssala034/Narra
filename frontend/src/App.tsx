@@ -1,4 +1,47 @@
-import './App.css'
+import React from 'react'
+import Sidebar from './components/Sidebar/Sidebar'
+import Main from './components/Main/Main'
+
+const App = () => {
+  return (
+    <>
+    <Sidebar/>
+    <Main/>
+      
+    </>
+  )
+}
+
+export default App
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * 
+ * From my initial loading one, keep cause will match later, especially the color
+ * 
+ * 
+ * 
+ * import './App.css'
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home'
@@ -22,3 +65,4 @@ function App() {
 }
 
 export default App;
+ */

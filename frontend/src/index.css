@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Handlee&display=swap');
-
+/* @import url('https://fonts.googleapis.com/css2?family=Handlee&display=swap');
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
@@ -7,4 +6,31 @@ body {
 
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; ---- Old One*/
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+
+
+
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: Outfit;
+}
+
+#root{
+  min-height: 100vh;
+  display: flex;
+  animation: fadeIn 1.5s; /*Try to make it so each time they re-open and close it does it */
+}
+
+@keyframes fadeIn {
+  0%{
+    opacity: 0;
+  }
+  100%{
+    opacity: 1;
+  }
+}
