@@ -52,6 +52,8 @@ func (a *App) Greet(name string) string {
 Logic for buiding file system, will be used inside the RAG pipeline
 Still need to do data indexing and vector store creation
 (might do on different files???)
+
+Remove these filesystem functions later, Put them in rag.go
 */
 type FileSystemNode struct {
 	Name     string

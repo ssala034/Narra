@@ -1,4 +1,6 @@
 import { createContext, useState } from "react";
+import { SimpleQuery } from '../../wailsjs/go/main/RAGPipeline'
+import { Greet } from '../../wailsjs/go/main/App'
 
 export const Context = createContext();
 
@@ -45,26 +47,21 @@ const ContextProvider = (props) => {
         setResultData("") // previous response removed
         setLoading(true)
         setShowResult(true)
-        let promptValue;
+        let response;
         if(prompt !== undefined){
-            // response = await runChat(prompt)
-            promptValue = true
+            console.log("Prompt's type is ", typeof prompt)
+            response = await SimpleQuery(prompt)
+
             setRecentPrompt(prompt)
         }else{
             setPreviousPrompts(prev=>[...prev, input]) // might use the sqlite here, cause I don't want it to re-generate a different reponse
             setRecentPrompt(input)
             //response = await runChat(input)
-            promptValue = false;
+            console.log("Input's type is ", typeof input)
+            response = await SimpleQuery(input)
         }
 
-        // const response = await runChat(input) // return response text
-        const responseToRemove = `${promptValue}**React Native** is an open-source framework developed by **Meta** (formerly Facebook) that allows developers to build mobile applications for **iOS** and Android using JavaScript and React. Unlike traditional web apps, React Native apps use native components instead of web views, which means they offer performance close to native apps while sharing a single codebase across platforms. This makes development faster and more efficient, especially for teams building apps for multiple mobile platforms.`
-        console.log("Testing response: ", responseToRemove)
-
-        await sleep(2000)
-
-
-        let responseArray = responseToRemove.split("**")
+        let responseArray = response.split("**")
         let newResponse = "";
         for(let i = 0; i < responseArray.length; i++){
             if (i === 0 || i % 2 !== 1){

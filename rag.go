@@ -42,16 +42,16 @@ type VectorDB struct {
 
 // RAGPipeline orchestrates the entire RAG process
 type RAGPipeline struct {
-	geminiAPIKey string
-	client       *genai.Client
-	vectorDB     *VectorDB
-	dbPath       string
+	geminiAPIKey string        `json:"gemini_api_key"`
+	client       *genai.Client `json:"-"`
+	vectorDB     *VectorDB     `json:"vector_db"`
+	dbPath       string        `json:"db_path"`
 }
 
 // SearchResult represents a search result with similarity score
 type SearchResult struct {
-	Document   Document
-	Similarity float32
+	Document   Document `json:"document"`
+	Similarity float32  `json:"similarity"`
 }
 
 // 1. INDEXING PIPELINE
@@ -72,9 +72,36 @@ func NewRAGPipeline(geminiAPIKey, dbPath string) (*RAGPipeline, error) {
 	}
 
 	// Try to load existing database
-	pipeline.loadDB()
+	// pipeline.loadDB()
 
 	return pipeline, nil
+}
+
+// temporary go binding function
+
+func (r *RAGPipeline) SimpleQuery(input string) string {
+	// Set up API key
+	geminiAPIKey := "api-key"
+	if geminiAPIKey == "" {
+		log.Fatal("GEMINI_API_KEY environment variable not set")
+	}
+
+	// Initialize RAG pipeline
+	pipeline, err := NewRAGPipeline(geminiAPIKey, "")
+	if err != nil {
+		log.Fatal("Failed to create RAG pipeline:", err)
+	}
+
+	ctx := context.Background()
+
+	dummyContext := []string{}
+	answer, err := pipeline.GenerateAnswer(ctx, input, dummyContext)
+
+	if err != nil {
+		log.Fatal("RAG query failed:", err)
+	}
+
+	return answer
 }
 
 // isTextFile checks if a file is a text file based on extension
@@ -296,7 +323,7 @@ func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN in
 	}
 
 	// Sort by similarity (descending)
-	for i := 0; i < len(results)-1; i++ {
+	for i := 0; i < len(results) - 1; i++ {
 		for j := i + 1; j < len(results); j++ {
 			if results[i].Similarity < results[j].Similarity {
 				results[i], results[j] = results[j], results[i]
@@ -317,14 +344,14 @@ func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN in
 // GenerateAnswer generates an answer using retrieved context and Gemini
 func (r *RAGPipeline) GenerateAnswer(ctx context.Context, query string, context []string) (string, error) {
 	// Create prompt with context
-	prompt := r.createRAGPrompt(query, context)
+	// prompt := r.createRAGPrompt(query, context) uncomment out later
 
 	// might need to give apiKey here ?!?!?!?
 
 	// Generate response using Gemini
 	model := r.client.GenerativeModel("gemini-2.5-flash") // try pro later !!!
 
-	response, err := model.GenerateContent(ctx, genai.Text(prompt))
+	response, err := model.GenerateContent(ctx, genai.Text(query))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate response: %w", err)
 	}

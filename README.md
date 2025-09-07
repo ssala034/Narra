@@ -52,11 +52,22 @@ Try to use some optimization techniques so that i don't ahve to actually parse 2
 
 currently very slow reading everything
 
+**
+    Try to incorporate SQLite, it will be good sql practice, but focus that later
+    Also will need to look at things like OnStartup and OnShutdown 
+**
+
+1) chroma db
+2) sqlite
+
 
 
 
 
 _____
+
+Sept 7th
+- Might need to make .dist not ignored
 
 Sept 2nd
 Skipped the Ai setup in JS (50:02)

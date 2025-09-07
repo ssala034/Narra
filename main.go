@@ -19,7 +19,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:            "wails-events",
+		Title:            "Narra",
 		Width:            1024,
 		Height:           768,
 		Assets:           assets,
@@ -27,6 +27,7 @@ func main() {
 		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,
+			&RAGPipeline{},
 		},
 	})
 
