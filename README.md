@@ -1,5 +1,5 @@
 # Narra Assistant
-A software analytical desktop app
+> A software analytical desktop app
 
 ## Overview
 
@@ -18,11 +18,23 @@ A software analytical desktop app
 - **Gemini LLM**: Provides natural language understanding and generation  
 - **RAG Pipeline**: Enhances responses with vector embeddings for context retrieval  
 
-![React](https://img.shields.io/badge/React-%2361DAFB.svg?logo=react&logoColor=black)  
-![TypeScript](https://img.shields.io/badge/TypeScript-%233178C6.svg?logo=typescript&logoColor=white)  
-![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?logo=go&logoColor=white)  
+- **Frontend**:  
+  - [![React](https://img.shields.io/badge/React-%2320232a.svg?logo=react&logoColor=%2361DAFB)](https://react.dev/)  
+  - [![TypeScript](https://img.shields.io/badge/TypeScript-%233178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)  
 
-(pictures)
+- **Backend**:  
+  - [![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?logo=go&logoColor=white)](https://go.dev/)  
+
+- **AI & Pipeline**:  
+  - [![Gemini](https://img.shields.io/badge/Gemini%20LLM-%234285F4.svg?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)  
+  - [![RAG](https://img.shields.io/badge/RAG%20Pipeline-%236DB33F.svg?logo=vectorworks&logoColor=white)](#)
+
+
+<img width="1917" height="1123" alt="image" src="https://github.com/user-attachments/assets/36b26854-a364-4c5b-bb45-61da3cf2e065" />
+
+
+<img width="1914" height="1119" alt="Screenshot 2025-09-14 165051" src="https://github.com/user-attachments/assets/9df62443-4133-4cc2-88c0-55127619abfe" />
+
 
 
 ### RAG Pipeline Architecture
@@ -44,8 +56,8 @@ A software analytical desktop app
    ```
 
    Please also install:
-   - Go compiler
-   - Node.js 
+   - Go compiler --> [here](https://go.dev/doc/install)
+   - Node.js --> [here](https://nodejs.org/en/download/)
 
 3. Install frontend dependencies:
    ```bash
