@@ -4,12 +4,12 @@ import { assets } from '../../assets/assets'
 import { Context } from '../../Context/Context'
 
 
-interface ContextType { // edit the types
+interface ContextType {
   onSent: () => void;
   recentPrompt: string;
   showResult: boolean;
   loading: boolean;
-  resultData: any; // or a more specific type
+  resultData: any; 
   setInput: (input: string) => void;
   input: string;
 }
@@ -21,8 +21,8 @@ const Main = () => {
   return (
     <div className='main'>
         <div className="nav">
-            <p>Gemini</p>
-            <img src={assets.user_icon} alt="" />
+            <p>Narra Gemini Assistant</p>
+            <img src={assets.narra_icon} alt="" />
         </div>
         <div className="main-container">
             {!showResult
@@ -52,7 +52,7 @@ const Main = () => {
               </>
               :<div className='result'>
                 <div className="result-title">
-                    <img src={assets.user_icon} alt="" />
+                    <img src={assets.narra_icon} alt="" />
                     <p>{recentPrompt}</p>
                 </div>
                 <div className="result-data">

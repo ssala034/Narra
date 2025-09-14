@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Handlee&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.home-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 0 1rem;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #090607 0%,
+    #221f20 30%,
+    #090607 65%,
+    #9a2740 100%
+  );
+}
+
+.home-container::before {
+  content: "";
+  position: absolute;
+  bottom: -50px;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  background: radial-gradient(
+      circle at 70% 40%,
+      rgba(154, 39, 64, 0),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(154, 39, 64, 1),
+      transparent 80%
+    );
+  clip-path: path(
+    "M0,160 C480,300 960,40 1440,160 L1440,320 L0,320 Z"
+  );
+  opacity: 0.8;
+}
+
+.home-title {
+  font-family: "Handlee", cursive;
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  z-index: 1;
+  position: relative;
+}
+
+.home-subtitle {
+  font-size: 1.1rem;
+  max-width: 500px;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  z-index: 1;
+  position: relative;
+}
+
+.home-input {
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  width: 300px;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  z-index: 1;
+  position: relative;
+  flex: 1;
+}
+
+.home-input-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  max-width: 350px;
+  gap: 10px;
+}
+
+.home-send-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  filter: invert(1);
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.home-send-icon:hover {
+  opacity: 1;
+}
+
+.home-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

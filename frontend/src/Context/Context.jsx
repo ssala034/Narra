@@ -1,6 +1,5 @@
 import { createContext, useState } from "react";
-import { SimpleQuery } from '../../wailsjs/go/main/RAGPipeline'
-import { Greet } from '../../wailsjs/go/main/App'
+import { SimpleQuery, StartEmbeddings } from '../../wailsjs/go/main/RAGPipeline'
 
 export const Context = createContext();
 
@@ -17,6 +16,8 @@ const ContextProvider = (props) => {
     const [showResult, setShowResult] = useState(false)
     const [loading, setLoading] = useState(false)
     const [resultData, setResultData] = useState("")
+    const [projectPath, setProjectPath] = useState("")
+    const [loadingData, setLoadingData] = useState(true)
 
     const delayPara = (index, nextWord) => {
         setTimeout(function () {
@@ -29,21 +30,26 @@ const ContextProvider = (props) => {
     const newChat = () => {
         setLoading(false)
         setShowResult(false)
+    }
 
+    const LoadEmbeddings = async (path) => {
+        try {
+            setLoadingData(true); 
+            console.log("Starting embeddings for path:", path);
+            
+            // Call the Go backend function to start embeddings
+            const documents = await StartEmbeddings(path); 
+            console.log("Embeddings loaded successfully");
+        } catch (error) {
+            console.error("Error loading embeddings:", error);
+        } finally {
+            setLoadingData(false); // Always set to false when done
+        }
     }
 
 
 
     const onSent = async (prompt) => {
-        /* NOTE */
-        // gemini function
-        // would be from goLang backend !!! IMPORTANT TO FINISH
-        // should be asynchronous function
-
-
-
-        //  < input >  is the correct input to use
-
         setResultData("") // previous response removed
         setLoading(true)
         setShowResult(true)
@@ -51,12 +57,10 @@ const ContextProvider = (props) => {
         if(prompt !== undefined){
             console.log("Prompt's type is ", typeof prompt)
             response = await SimpleQuery(prompt)
-
             setRecentPrompt(prompt)
         }else{
             setPreviousPrompts(prev=>[...prev, input]) // might use the sqlite here, cause I don't want it to re-generate a different reponse
             setRecentPrompt(input)
-            //response = await runChat(input)
             console.log("Input's type is ", typeof input)
             response = await SimpleQuery(input)
         }
@@ -80,11 +84,7 @@ const ContextProvider = (props) => {
         }
         setLoading(false)
         setInput("")
-
-
     }
-
-    // onSent("What is react js")
 
 
     const contextValue = {
@@ -98,7 +98,12 @@ const ContextProvider = (props) => {
         resultData,
         input,
         setInput,
-        newChat
+        newChat,
+        projectPath,
+        setProjectPath,
+        loadingData,
+        setLoadingData,
+        LoadEmbeddings
     }
 
 

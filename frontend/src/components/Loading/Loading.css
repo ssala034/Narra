@@ -1,26 +1,78 @@
-.loader {
-  display: inline-block;
+/* Loading Container - Full screen with Home component's gradient */
+.loading-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 0 1rem;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #090607 0%,
+    #221f20 30%,
+    #090607 65%,
+    #9a2740 100%
+  );
+}
+
+/* Wave effect similar to Home component */
+.loading-container::before {
+  content: "";
+  position: absolute;
+  bottom: -50px;
+  left: 0;
+  width: 100%;
+  height: 200px;
+  background: radial-gradient(
+      circle at 70% 40%,
+      rgba(154, 39, 64, 0),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(154, 39, 64, 1),
+      transparent 80%
+    );
+  clip-path: path(
+    "M0,160 C480,300 960,40 1440,160 L1440,320 L0,320 Z"
+  );
+  opacity: 0.8;
+}
+
+/* Loading title */
+.loading-title {
+  font-family: "Handlee", cursive;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  z-index: 1;
   position: relative;
 }
 
-.loader-circle {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 10px solid transparent;
-  border-top-color: #c26e73;
-  border-right-color: #ac1ed6;
-  border-bottom-color: #c26e73;
-  border-left-color: #ac1ed6;
-  animation: spin 1s linear infinite;
-  box-shadow: 0 0 15px #c26e73, 0 0 15px #ac1ed6;
+/* Spinner wrapper */
+.loading-spinner {
+  z-index: 1;
+  position: relative;
+  margin: 2rem 0;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+/* Loading subtitle */
+.loading-subtitle {
+  font-size: 1.1rem;
+  margin-top: 2rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  z-index: 1;
+  position: relative;
+  max-width: 400px;
+  min-height: 2em;
+  transition: opacity 0.3s ease-in-out;
 }
+
+/* Import Google Font for consistency */
+@import url('https://fonts.googleapis.com/css2?family=Handlee&display=swap');

@@ -1,6 +1,6 @@
 package main
 
-// will build here the retrieving of relavant documnent that wan be used for the LLM
+// Package implements a Retrieval-Augmented Generation (RAG) pipeline for document analysis and querying.
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
+	"golang.org/x/time/rate"
 	"google.golang.org/api/option"
 )
 
@@ -35,17 +36,19 @@ type Embedding struct {
 	Created  time.Time `json:"created"`
 }
 
-// VectorDB represents our simple in-memory vector database
+// VectorDB represents an in-memory vector database for storing document embeddings.
 type VectorDB struct {
 	Embeddings []Embedding `json:"embeddings"`
 }
 
-// RAGPipeline orchestrates the entire RAG process
+// RAGPipeline orchestrates the entire RAG process including document indexing,
+// vector embeddings, semantic search, and answer generation.
 type RAGPipeline struct {
 	geminiAPIKey string        `json:"gemini_api_key"`
 	client       *genai.Client `json:"-"`
 	vectorDB     *VectorDB     `json:"vector_db"`
 	dbPath       string        `json:"db_path"`
+	rateLimiter  *rate.Limiter `json:"-"`
 }
 
 // SearchResult represents a search result with similarity score
@@ -54,9 +57,49 @@ type SearchResult struct {
 	Similarity float32  `json:"similarity"`
 }
 
-// 1. INDEXING PIPELINE
+// globalRagPipeline provides dependency injection for the RAG pipeline instance.
+var globalRagPipeline *RAGPipeline
 
-// NewRAGPipeline creates a new RAG pipeline instance
+// StartEmbeddings initializes the RAG pipeline and processes documents from the specified root path.
+// This method should be called first to build the file system tree and create document embeddings.
+func (r *RAGPipeline) StartEmbeddings(rootPath string) []Document {
+
+	geminiAPIKey := "Your-API-Key-Here"
+	if geminiAPIKey == "" {
+		log.Fatal("GEMINI_API_KEY environment variable not set")
+	}
+
+	// Initialize RAG pipeline
+	pipeline, err := NewRAGPipeline(geminiAPIKey, "vector_db.json")
+	if err != nil {
+		log.Fatal("Failed to create RAG pipeline:", err)
+	}
+
+	globalRagPipeline = pipeline
+
+	// Build file system tree
+	root, err := BuildFileSystemTree(rootPath)
+	if err != nil {
+		log.Fatal("Failed to build file system tree:", err)
+	}
+
+	fmt.Printf("Built file system tree for: %s\n", root.Name)
+
+	// Extract documents and create embeddings for indexing
+	documents := getGlobalPipeline().ExtractDocuments(root)
+	fmt.Printf("Extracted %d document chunks\n", len(documents))
+	return documents
+
+}
+
+func getGlobalPipeline() *RAGPipeline {
+	if globalRagPipeline == nil {
+		panic("RAGPipeline not initialized. Call StartEmbeddings() first.")
+	}
+	return globalRagPipeline
+}
+
+// NewRAGPipeline creates a new RAG pipeline instance with the specified API key and database path.
 func NewRAGPipeline(geminiAPIKey, dbPath string) (*RAGPipeline, error) {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(geminiAPIKey))
@@ -64,47 +107,48 @@ func NewRAGPipeline(geminiAPIKey, dbPath string) (*RAGPipeline, error) {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
+	// Create rate limiter to prevent API quota exhaustion: 1 request per second with burst capacity of 2
+	rateLimiter := rate.NewLimiter(rate.Every(time.Second), 2)
+
 	pipeline := &RAGPipeline{
 		geminiAPIKey: geminiAPIKey,
 		client:       client,
 		vectorDB:     &VectorDB{Embeddings: []Embedding{}},
 		dbPath:       dbPath,
+		rateLimiter:  rateLimiter,
 	}
-
-	// Try to load existing database
-	// pipeline.loadDB()
 
 	return pipeline, nil
 }
 
-// temporary go binding function
-
-func (r *RAGPipeline) SimpleQuery(input string) string {
-	// Set up API key
-	geminiAPIKey := "api-key"
-	if geminiAPIKey == "" {
-		log.Fatal("GEMINI_API_KEY environment variable not set")
-	}
-
-	// Initialize RAG pipeline
-	pipeline, err := NewRAGPipeline(geminiAPIKey, "")
-	if err != nil {
-		log.Fatal("Failed to create RAG pipeline:", err)
-	}
+func (r *RAGPipeline) SimpleQuery(query string) string {
 
 	ctx := context.Background()
 
-	dummyContext := []string{}
-	answer, err := pipeline.GenerateAnswer(ctx, input, dummyContext)
+	fmt.Printf("\n=== Query: %s ===\n", query)
 
+	answer, results, err := getGlobalPipeline().Query(ctx, query, 3)
 	if err != nil {
-		log.Fatal("RAG query failed:", err)
+		log.Printf("Query failed: %v", err)
+		return ""
 	}
 
-	return answer
+	var sb strings.Builder
+
+	// Format the response with answer and supporting documents
+	sb.WriteString(fmt.Sprintf("Response: %s\n\n", answer))
+
+	// Include metadata about relevant source documents
+	sb.WriteString("Relevant documents:\n")
+	for i, result := range results {
+		sb.WriteString(fmt.Sprintf("%d. [%.3f] %s (chunk %d)\n",
+			i+1, result.Similarity, result.Document.FilePath, result.Document.ChunkIdx))
+	}
+
+	return sb.String()
 }
 
-// isTextFile checks if a file is a text file based on extension
+// isTextFile determines if a file should be processed based on its extension.
 func isTextFile(filename string) bool {
 	textExtensions := []string{".txt", ".md", ".go", ".py", ".js", ".java", ".html", ".css", ".json", ".yaml", ".yml", ".xml", ".csv"}
 	ext := strings.ToLower(filepath.Ext(filename))
@@ -129,7 +173,7 @@ func (r *RAGPipeline) extractDocumentsRecursive(node *FileSystemNode, documents 
 		return
 	}
 
-	// If it's a file with content, process it
+	// If it's a file with content, process it into document chunks
 	if !node.IsDir && len(node.Content) > 0 {
 		chunks := r.splitText(string(node.Content))
 
@@ -150,15 +194,15 @@ func (r *RAGPipeline) extractDocumentsRecursive(node *FileSystemNode, documents 
 		}
 	}
 
-	// Process children
+	// Process child nodes recursively
 	for _, child := range node.Children {
 		r.extractDocumentsRecursive(child, documents)
 	}
 }
 
-// splitText splits text into chunks (simple paragraph-based splitting)
+// splitText divides text into manageable chunks using paragraph boundaries and character limits.
 func (r *RAGPipeline) splitText(text string) []string {
-	// Split on double newlines (paragraphs) or every 1000 characters for long lines
+	// Split on double newlines (paragraphs) or every 1000 characters for long sections
 	paragraphs := regexp.MustCompile(`\n\s*\n`).Split(text, -1)
 
 	var chunks []string
@@ -168,7 +212,7 @@ func (r *RAGPipeline) splitText(text string) []string {
 			continue
 		}
 
-		// If paragraph is too long, split it further
+		// Split overly long paragraphs into smaller chunks
 		if len(paragraph) > 1000 {
 			subChunks := r.splitLongText(paragraph, 1000)
 			chunks = append(chunks, subChunks...)
@@ -206,16 +250,22 @@ func (r *RAGPipeline) splitLongText(text string, maxLength int) []string {
 	return chunks
 }
 
-// generateDocumentID creates a unique ID for a document chunk
+// generateDocumentID creates a unique identifier for a document chunk using MD5 hashing.
 func (r *RAGPipeline) generateDocumentID(filePath string, chunkIdx int) string {
 	data := fmt.Sprintf("%s_%d", filePath, chunkIdx)
 	hash := md5.Sum([]byte(data))
 	return fmt.Sprintf("%x", hash)[:16]
 }
 
-// CreateEmbedding creates an embedding for a given text using Gemini
+// CreateEmbedding generates vector embeddings for text using the Gemini API.
 func (r *RAGPipeline) CreateEmbedding(ctx context.Context, text string) ([]float32, error) {
-	model := r.client.EmbeddingModel("embedding-001") // not sure if gemini has that, other use chromadb
+	// Apply rate limiting to prevent API quota exhaustion
+	err := r.rateLimiter.Wait(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("rate limiter error: %w", err)
+	}
+
+	model := r.client.EmbeddingModel("embedding-001")
 
 	batch := model.NewBatch().AddContent(genai.Text(text))
 	result, err := model.BatchEmbedContents(ctx, batch)
@@ -230,7 +280,7 @@ func (r *RAGPipeline) CreateEmbedding(ctx context.Context, text string) ([]float
 	return result.Embeddings[0].Values, nil
 }
 
-// IndexDocuments processes and indexes all documents
+// IndexDocuments processes documents and creates vector embeddings for the database.
 func (r *RAGPipeline) IndexDocuments(documents []Document) error {
 	ctx := context.Background()
 
@@ -241,7 +291,7 @@ func (r *RAGPipeline) IndexDocuments(documents []Document) error {
 			log.Printf("Processing document %d/%d", i+1, len(documents))
 		}
 
-		// Check if document is already indexed
+		// Skip documents that are already indexed
 		exists := false
 		for _, existing := range r.vectorDB.Embeddings {
 			if existing.Document.ID == doc.ID {
@@ -254,14 +304,14 @@ func (r *RAGPipeline) IndexDocuments(documents []Document) error {
 			continue
 		}
 
-		// Create embedding
+		// Generate vector embedding for document content
 		vector, err := r.CreateEmbedding(ctx, doc.Content)
 		if err != nil {
 			log.Printf("Error creating embedding for document %s: %v", doc.ID, err)
 			continue
 		}
 
-		// Store embedding
+		// Store the embedding in the vector database
 		embedding := Embedding{
 			ID:       doc.ID,
 			Vector:   vector,
@@ -271,11 +321,11 @@ func (r *RAGPipeline) IndexDocuments(documents []Document) error {
 
 		r.vectorDB.Embeddings = append(r.vectorDB.Embeddings, embedding)
 
-		// Add small delay to avoid rate limiting
+		// Add delay to prevent rate limiting issues
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	// Save to disk
+	// Persist the updated database to disk
 	return r.saveDB()
 }
 
@@ -302,15 +352,15 @@ func cosineSimilarity(a, b []float32) float32 {
 	return dotProduct / (normA * normB)
 }
 
-// SearchDocuments performs semantic search and returns top n results
+// SearchDocuments performs semantic search using vector similarity and returns the top N results.
 func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN int) ([]SearchResult, error) {
-	// Create embedding for query
+	// Generate query embedding for similarity comparison
 	queryVector, err := r.CreateEmbedding(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create query embedding: %w", err)
 	}
 
-	// Calculate similarities
+	// Calculate cosine similarity between query and all document embeddings
 	var results []SearchResult
 
 	for _, embedding := range r.vectorDB.Embeddings {
@@ -322,8 +372,8 @@ func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN in
 		})
 	}
 
-	// Sort by similarity (descending)
-	for i := 0; i < len(results) - 1; i++ {
+	// Sort results by similarity score in descending order
+	for i := 0; i < len(results)-1; i++ {
 		for j := i + 1; j < len(results); j++ {
 			if results[i].Similarity < results[j].Similarity {
 				results[i], results[j] = results[j], results[i]
@@ -331,7 +381,7 @@ func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN in
 		}
 	}
 
-	// Return top N results
+	// Return the top N most relevant results
 	if topN > len(results) {
 		topN = len(results)
 	}
@@ -339,17 +389,19 @@ func (r *RAGPipeline) SearchDocuments(ctx context.Context, query string, topN in
 	return results[:topN], nil
 }
 
-// 3. GENERATION
-
-// GenerateAnswer generates an answer using retrieved context and Gemini
+// GenerateAnswer creates responses using retrieved context and the Gemini language model.
 func (r *RAGPipeline) GenerateAnswer(ctx context.Context, query string, context []string) (string, error) {
-	// Create prompt with context
-	// prompt := r.createRAGPrompt(query, context) uncomment out later
+	// Apply rate limiting to prevent API quota exhaustion
+	err := r.rateLimiter.Wait(ctx)
+	if err != nil {
+		return "", fmt.Errorf("rate limiter error: %w", err)
+	}
 
-	// might need to give apiKey here ?!?!?!?
+	// TODO: Implement context-aware prompt generation
+	// prompt := r.createRAGPrompt(query, context)
 
-	// Generate response using Gemini
-	model := r.client.GenerativeModel("gemini-2.5-flash") // try pro later !!!
+	// Generate response using Gemini language model
+	model := r.client.GenerativeModel("gemini-1.5-flash")
 
 	response, err := model.GenerateContent(ctx, genai.Text(query))
 	if err != nil {
@@ -363,7 +415,7 @@ func (r *RAGPipeline) GenerateAnswer(ctx context.Context, query string, context 
 	return fmt.Sprintf("%v", response.Candidates[0].Content.Parts[0]), nil
 }
 
-// createRAGPrompt creates a prompt with context for generation
+// createRAGPrompt constructs a context-aware prompt for answer generation.
 func (r *RAGPipeline) createRAGPrompt(query string, context []string) string {
 	contextText := strings.Join(context, "\n\n")
 
@@ -383,11 +435,9 @@ ANSWER:`, contextText, query)
 	return prompt
 }
 
-// 4. MAIN RAG QUERY FUNCTION
-
-// Query performs the complete RAG pipeline: retrieve relevant documents and generate answer
+// Query executes the complete RAG pipeline: retrieval of relevant documents followed by answer generation.
 func (r *RAGPipeline) Query(ctx context.Context, query string, topN int) (string, []SearchResult, error) {
-	// Retrieve relevant documents
+	// Retrieve the most relevant documents for the query
 	results, err := r.SearchDocuments(ctx, query, topN)
 	if err != nil {
 		return "", nil, fmt.Errorf("search failed: %w", err)
@@ -397,13 +447,13 @@ func (r *RAGPipeline) Query(ctx context.Context, query string, topN int) (string
 		return "No relevant documents found for your query.", nil, nil
 	}
 
-	// Extract context from search results
+	// Extract textual content from search results for context
 	var context []string
 	for _, result := range results {
 		context = append(context, result.Document.Content)
 	}
 
-	// Generate answer
+	// Generate contextual answer using retrieved documents
 	answer, err := r.GenerateAnswer(ctx, query, context)
 	if err != nil {
 		return "", results, fmt.Errorf("answer generation failed: %w", err)
@@ -412,9 +462,7 @@ func (r *RAGPipeline) Query(ctx context.Context, query string, topN int) (string
 	return answer, results, nil
 }
 
-// 5. DATABASE PERSISTENCE
-
-// saveDB saves the vector database to disk
+// saveDB persists the vector database to disk in JSON format.
 func (r *RAGPipeline) saveDB() error {
 	data, err := json.MarshalIndent(r.vectorDB, "", "  ")
 	if err != nil {
@@ -424,12 +472,12 @@ func (r *RAGPipeline) saveDB() error {
 	return os.WriteFile(r.dbPath, data, 0644)
 }
 
-// loadDB loads the vector database from disk
+// loadDB restores the vector database from disk storage.
 func (r *RAGPipeline) loadDB() error {
 	data, err := os.ReadFile(r.dbPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Database doesn't exist yet, start with empty
+			// Initialize with empty database if file doesn't exist
 			return nil
 		}
 		return fmt.Errorf("failed to read database: %w", err)
@@ -438,7 +486,7 @@ func (r *RAGPipeline) loadDB() error {
 	return json.Unmarshal(data, r.vectorDB)
 }
 
-// GetStats returns statistics about the indexed data
+// GetStats returns comprehensive statistics about the indexed document collection.
 func (r *RAGPipeline) GetStats() map[string]interface{} {
 	fileCount := make(map[string]int)
 
@@ -453,18 +501,3 @@ func (r *RAGPipeline) GetStats() map[string]interface{} {
 		"database_size":      fmt.Sprintf("%.2f MB", float64(len(r.vectorDB.Embeddings)*len(r.vectorDB.Embeddings[0].Vector)*4)/1024/1024),
 	}
 }
-
-/*
-Steps
-
-1) need to load and store data
-2) which embedding models to use
-
-
-
-
-prompt --> [  vector search --> llm + context] --> output
- data indexing (loading, splitting, embedding, and later retrieval)
- as part of my vectorized search so gemini can get more context before giving me a prompted answer
-
-*/

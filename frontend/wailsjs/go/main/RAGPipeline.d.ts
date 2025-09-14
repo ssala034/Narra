@@ -18,3 +18,5 @@ export function Query(arg1:context.Context,arg2:string,arg3:number):Promise<stri
 export function SearchDocuments(arg1:context.Context,arg2:string,arg3:number):Promise<Array<main.SearchResult>>;
 
 export function SimpleQuery(arg1:string):Promise<string>;
+
+export function StartEmbeddings(arg1:string):Promise<Array<main.Document>>;

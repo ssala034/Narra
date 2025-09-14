@@ -33,3 +33,7 @@ export function SearchDocuments(arg1, arg2, arg3) {
 export function SimpleQuery(arg1) {
   return window['go']['main']['RAGPipeline']['SimpleQuery'](arg1);
 }
+
+export function StartEmbeddings(arg1) {
+  return window['go']['main']['RAGPipeline']['StartEmbeddings'](arg1);
+}
