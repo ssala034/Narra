@@ -5,6 +5,12 @@
 
 **Narra** is a software analytical desktop application that leverages **Gemini LLM API** and a **Retrieval-Augmented Generation (RAG) pipeline** to deliver context-aware, personalized interactions. By combining a modern frontend with a Go backend, Narra provides a seamless environment for multi-chat conversations while minimizing hallucinations through intelligent prompt handling.
 
+## Features
+<img width="1917" height="1123" alt="image" src="https://github.com/user-attachments/assets/36b26854-a364-4c5b-bb45-61da3cf2e065" />
+
+
+<img width="1914" height="1119" alt="Screenshot 2025-09-14 165051" src="https://github.com/user-attachments/assets/9df62443-4133-4cc2-88c0-55127619abfe" />
+
 ### Features:
 - **Personalized Prompts**: Generate responses tailored to individual conversations.
 - **Multiple Chats**: Manage several chat sessions in parallel.
@@ -28,12 +34,6 @@
 - **AI & Pipeline**:  
   - [![Gemini](https://img.shields.io/badge/Gemini%20LLM-%234285F4.svg?logo=google&logoColor=white)](https://deepmind.google/technologies/gemini/)  
   - [![RAG](https://img.shields.io/badge/RAG%20Pipeline-%236DB33F.svg?logo=vectorworks&logoColor=white)](#)
-
-
-<img width="1917" height="1123" alt="image" src="https://github.com/user-attachments/assets/36b26854-a364-4c5b-bb45-61da3cf2e065" />
-
-
-<img width="1914" height="1119" alt="Screenshot 2025-09-14 165051" src="https://github.com/user-attachments/assets/9df62443-4133-4cc2-88c0-55127619abfe" />
 
 
 
